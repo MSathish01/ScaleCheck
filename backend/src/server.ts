@@ -60,19 +60,23 @@ const startServer = async () => {
       });
     }, 5000);
 
-    // 4. Start HTTP listener
-    app.listen(config.port, () => {
-      console.log('\n================================================================');
-      console.log('🏛️  ScaleCheck — Legal Metrology e-Governance Platform');
-      console.log('🇮🇳  Ministry of Consumer Affairs, Food & Public Distribution (DoCA)');
-      console.log(`🚀  Server running on http://localhost:${config.port}`);
-      console.log(`🛡️  Tamper-Evident Ledger & Cryptographic Verification: ACTIVE`);
-      console.log(`🌐  Public Crowd-Verify: http://localhost:${config.port}/api/v1/certificates/verify/:certId`);
-      console.log('================================================================\n');
-    });
+    // 4. Start HTTP listener (in standalone server mode, not in Vercel serverless)
+    if (!process.env.VERCEL) {
+      app.listen(config.port, () => {
+        console.log('\n================================================================');
+        console.log('🏛️  ScaleCheck — Legal Metrology e-Governance Platform');
+        console.log('🇮🇳  Ministry of Consumer Affairs, Food & Public Distribution (DoCA)');
+        console.log(`🚀  Server running on http://localhost:${config.port}`);
+        console.log(`🛡️  Tamper-Evident Ledger & Cryptographic Verification: ACTIVE`);
+        console.log(`🌐  Public Crowd-Verify: http://localhost:${config.port}/api/v1/certificates/verify/:certId`);
+        console.log('================================================================\n');
+      });
+    }
   } catch (error) {
     console.error('Fatal startup error:', error);
-    process.exit(1);
+    if (!process.env.VERCEL) {
+      process.exit(1);
+    }
   }
 };
 

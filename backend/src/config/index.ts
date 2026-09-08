@@ -13,7 +13,7 @@ export const config = {
   jwtRefreshExpiresIn: '7d',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   mobileUrl: process.env.MOBILE_URL || 'http://localhost:5174',
-  keysPath: path.resolve(__dirname, '../../keys'),
-  uploadsPath: path.resolve(__dirname, '../../uploads'),
-  certificatesPath: path.resolve(__dirname, '../../uploads/certificates')
+  keysPath: process.env.KEYS_PATH || (process.env.VERCEL ? '/tmp/keys' : path.resolve(__dirname, '../../keys')),
+  uploadsPath: process.env.UPLOADS_PATH || (process.env.VERCEL ? '/tmp/uploads' : path.resolve(__dirname, '../../uploads')),
+  certificatesPath: process.env.CERTIFICATES_PATH || (process.env.VERCEL ? '/tmp/uploads/certificates' : path.resolve(__dirname, '../../uploads/certificates'))
 };
