@@ -1,0 +1,177 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  phone        String
+  passwordHash String
+  fullName     String
+  role         String   // TRADER, LMO, GATC, STATE_ADMIN, CENTRAL_ADMIN
+  state        String
+  district     String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile             StakeholderProfile?
+  instruments         Instrument[]
+  applications        Application[]       @relation("TraderApplications")
+  allocatedJobs       Application[]       @relation("AllocatedJobs")
+  inspections         Inspection[]        @relation("InspectorInspections")
+  issuedCertificates  Certificate[]       @relation("OfficerCertificates")
+  notifications       Notification[]
+}
+
+model StakeholderProfile {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationName    String?
+  tradeLicenseNo      String?
+  gstin               String?
+  jurisdiction        String?   // For LMOs (e.g., "Puducherry District 1")
+  approvalNumber      String?   // For GATCs (e.g., "GATC-PY-2024-009")
+  accreditationExpiry DateTime?
+  address             String?
+  isVerified          Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model Instrument {
+  id                       String        @id @default(cuid())
+  ownerId                  String
+  owner                    User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  serialNumber             String        @unique
+  category                 String        // NAWI_ELECTRONIC, NAWI_MECHANICAL, FUEL_DISPENSER, STORAGE_TANK, FLOW_METER, WEIGHBRIDGE
+  makeAndModel             String
+  modelApprovalNumber      String
+  capacity                 String        // e.g. "30 kg", "50000 L"
+  accuracyClass            String        // CLASS_I, CLASS_II, CLASS_III, CLASS_IIII
+  installationAddress      String
+  state                    String
+  district                 String
+  usageIntensity           String        @default("MEDIUM") // LOW, MEDIUM, HIGH, INDUSTRIAL_HEAVY
+  status                   String        @default("UNVERIFIED") // UNVERIFIED, VERIFIED, EXPIRED, PENDING_INSPECTION
+  lastVerifiedAt           DateTime?
+  validityExpiryAt         DateTime?
+  wearRiskScore            Float         @default(0.0) // 0.0 to 1.0 predictive risk
+  predictiveAdvisory       String?
+  renewalIncentiveEligible Boolean       @default(false)
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+
+  applications             Application[]
+  inspections              Inspection[]
+  certificates             Certificate[]
+}
+
+model Application {
+  id                 String       @id @default(cuid())
+  applicationNumber  String       @unique
+  type               String       // INITIAL_VERIFICATION, PERIODIC_REVERIFICATION, POST_REPAIR_VERIFICATION
+  status             String       @default("SUBMITTED") // SUBMITTED, ALLOCATED, SCHEDULED, INSPECTION_COMPLETED, CERTIFIED, REJECTED
+  traderId           String
+  trader             User         @relation("TraderApplications", fields: [traderId], references: [id])
+  instrumentId       String
+  instrument         Instrument   @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  allocatedToId      String?
+  allocatedTo        User?        @relation("AllocatedJobs", fields: [allocatedToId], references: [id])
+  targetType         String?      // LMO, GATC
+  feeAmount          Float        @default(500.0)
+  feePaymentStatus   String       @default("PAID") // PENDING, PAID, EXEMPT
+  feeTransactionRef  String?
+  scheduledDate      DateTime?
+  remarks            String?
+  rejectionReason    String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  inspection         Inspection?
+  certificate        Certificate?
+}
+
+model Inspection {
+  id                       String      @id @default(cuid())
+  applicationId            String      @unique
+  application              Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  instrumentId             String
+  instrument               Instrument  @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  inspectorId              String
+  inspector                User        @relation("InspectorInspections", fields: [inspectorId], references: [id])
+  inspectionDate           DateTime    @default(now())
+  visualCheckPassed        Boolean     @default(true)
+  repeatabilityCheckPassed Boolean     @default(true)
+  eccentricityErrorMm      Float?
+  maxPermissibleErrorMpe   Float?
+  observedError            Float?
+  testWeightsUsed          String      // e.g. "Standard Class F1 Stamped Weights (Serial #CW-992)"
+  securitySealNumber       String      // e.g. "DOCA-SL-94021"
+  photoEvidenceUrl         String?
+  geoLatitude              Float?
+  geoLongitude             Float?
+  result                   String      @default("PASS") // PASS, FAIL
+  officerNotes             String?
+  offlineSyncId            String?
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+
+  certificate              Certificate?
+}
+
+model Certificate {
+  id                          String      @id @default(cuid())
+  certificateNumber           String      @unique
+  instrumentId                String
+  instrument                  Instrument  @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  applicationId               String      @unique
+  application                 Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  inspectionId                String      @unique
+  inspection                  Inspection  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  issuingOfficerId            String
+  issuingOfficer              User        @relation("OfficerCertificates", fields: [issuingOfficerId], references: [id])
+  issueDate                   DateTime    @default(now())
+  validityExpiryDate          DateTime
+  verificationStatus          String      @default("VALID") // VALID, EXPIRED, REVOKED, SUPERSEDED
+  digitalSignature            String      // Ed25519/RSA signature hex
+  publicKeyId                 String      // Key ID
+  signedPayloadHash           String      // SHA256 hash of certificate canonical dataset
+  qrPayloadUrl                String      // Public verify link encoded in QR
+  pdfFilePath                 String?
+  earlyRenewalDiscountApplied Boolean     @default(false)
+  createdAt                   DateTime    @default(now())
+  updatedAt                   DateTime    @updatedAt
+}
+
+model VerificationLedger {
+  id           Int      @id @default(autoincrement())
+  sequence     Int      @unique
+  previousHash String
+  recordHash   String
+  eventType    String   // GENESIS, INSTRUMENT_REGISTERED, APPLICATION_SUBMITTED, JOB_ALLOCATED, INSPECTION_COMPLETED, CERTIFICATE_ISSUED, CERTIFICATE_REVOKED
+  entityType   String   // SYSTEM, INSTRUMENT, APPLICATION, INSPECTION, CERTIFICATE
+  entityId     String
+  payload      String   // JSON stringified state representation
+  actorId      String?
+  timestamp    DateTime @default(now())
+  merkleRoot   String?
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // EXPIRY_ALERT, SCHEDULE_UPDATE, RENEWAL_REMINDER, INSPECTION_ASSIGNED, CERTIFICATE_READY
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  channel   String   @default("IN_APP") // IN_APP, EMAIL_STUB, SMS_STUB
+  createdAt DateTime @default(now())
+}

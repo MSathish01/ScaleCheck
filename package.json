@@ -1,0 +1,21 @@
+{
+  "name": "scalecheck-platform",
+  "version": "1.0.0",
+  "description": "Smart Online Verification & Tamper-Proof Certification System for Legal Metrology (DoCA)",
+  "private": true,
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:mobile": "cd mobile && npm run dev",
+    "seed": "cd backend && npm run seed"
+  },
+  "keywords": [
+    "legal-metrology",
+    "e-governance",
+    "cryptographic-verification",
+    "tamper-evident-ledger",
+    "doca"
+  ],
+  "author": "ScaleCheck Team",
+  "license": "UNLICENSED"
+}
