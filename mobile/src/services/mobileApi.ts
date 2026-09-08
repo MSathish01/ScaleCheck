@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { offlineDb, AssignedJob, OfflineInspection } from '../db/offlineDb';
 
-const API_BASE = 'http://localhost:5000/api/v1';
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 export class MobileApiService {
   private static token: string | null = localStorage.getItem('scalecheck_mobile_token');
