@@ -78,7 +78,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
             right: 20,
             child: Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.black.withOpacity(0.7), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: const Color(0xB3000000), borderRadius: BorderRadius.circular(12)),
               child: const Text(
                 'Align the camera with the QR Seal on the scale plate or petrol dispenser.',
                 textAlign: TextAlign.center,
@@ -103,8 +103,8 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Icon(Icons.check_circle, color: Color(0xFF047857), size: 28),
                         SizedBox(width: 8),
                         Text('VERIFIED STATUTORY SEAL', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),

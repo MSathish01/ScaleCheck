@@ -43,7 +43,7 @@ class RejectionNoticeScreen extends StatelessWidget {
                             ),
                             const Text(
                               'LEGAL METROLOGY ACT, 2009',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.black, color: Color(0xFF881337)),
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF881337)),
                             ),
                           ],
                         ),
@@ -117,9 +117,9 @@ class RejectionNoticeScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.amber[300]!),
               ),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text('⚖️ Mandatory Legal Directive:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF78350F))),
                   SizedBox(height: 4),
                   Text(

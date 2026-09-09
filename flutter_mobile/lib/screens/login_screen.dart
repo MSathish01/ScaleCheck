@@ -70,11 +70,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF0F2B5C),
                       borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(
-                          color: const Color(0xFF0F2B5C).withOpacity(0.25),
+                          color: Color(0x400F2B5C),
                           blurRadius: 16,
-                          offset: const Offset(0, 8),
+                          offset: Offset(0, 8),
                         ),
                       ],
                     ),
@@ -87,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Center(
                   child: Text(
                     'ScaleCheck Mobile',
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.black, color: Color(0xFF0F2B5C)),
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFF0F2B5C)),
                   ),
                 ),
                 const Center(

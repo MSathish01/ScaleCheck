@@ -1,12 +1,12 @@
 import 'package:dio/dio.dart';
 import '../data/models/assigned_job.dart';
-import '../data/models/offline_inspection.dart';
 import '../data/local_db.dart';
 
 class ApiService {
   static const String defaultBaseUrl = 'http://10.0.2.2:5000/api/v1'; // 10.0.2.2 for Android Emulator
   late final Dio _dio;
   String? _authToken;
+  String? get authToken => _authToken;
 
   ApiService({String baseUrl = defaultBaseUrl}) {
     _dio = Dio(BaseOptions(

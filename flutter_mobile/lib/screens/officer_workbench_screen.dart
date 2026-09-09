@@ -112,7 +112,9 @@ class OfficerWorkbenchScreen extends StatelessWidget {
                         ? null
                         : () async {
                             final msg = await provider.syncPendingQueue();
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                            }
                           },
                   ),
                 ],
@@ -127,7 +129,7 @@ class OfficerWorkbenchScreen extends StatelessWidget {
               children: [
                 Text(
                   'Assigned Field Inspections (${provider.jobs.length})',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.extrabold, color: Color(0xFF1E293B)),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
                 ),
                 Text(
                   'Jurisdiction: ${provider.currentUser?['district'] ?? 'Puducherry'}',
@@ -213,13 +215,13 @@ class _JobCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.12),
+                    color: statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: statusColor.withOpacity(0.3)),
+                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     job.status,
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.extrabold, color: statusColor),
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: statusColor),
                   ),
                 ),
               ],

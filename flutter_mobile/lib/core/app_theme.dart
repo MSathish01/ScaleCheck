@@ -17,7 +17,6 @@ class AppTheme {
         primary: primaryNavy,
         secondary: accentBlue,
         surface: cardSurface,
-        background: backgroundSlate,
       ),
       scaffoldBackgroundColor: backgroundSlate,
       appBarTheme: const AppBarTheme(
@@ -31,10 +30,10 @@ class AppTheme {
           color: Colors.white,
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: cardSurface,
         elevation: 1,
-        shadowColor: Colors.black.withOpacity(0.04),
+        shadowColor: const Color(0x0A000000),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: Color(0xFFE2E8F0)),

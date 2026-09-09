@@ -168,7 +168,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                 children: [
                   Text(
                     widget.job.instrumentSerial,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.black, color: Color(0xFF1E3A8A)),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A)),
                   ),
                   Text('${widget.job.category} • ${widget.job.accuracyClass} (${widget.job.capacity})', style: const TextStyle(fontSize: 12)),
                   const SizedBox(height: 4),
@@ -296,7 +296,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                 Expanded(
                   flex: 2,
                   child: DropdownButtonFormField<String>(
-                    value: _result,
+                    initialValue: _result,
                     decoration: const InputDecoration(labelText: 'Decision'),
                     items: const [
                       DropdownMenuItem(value: 'PASS', child: Text('PASS')),
