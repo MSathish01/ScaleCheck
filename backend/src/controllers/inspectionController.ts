@@ -48,8 +48,59 @@ export class InspectionController {
         where: { applicationId }
       });
 
+      const isPass = result.toUpperCase() === 'PASS' || result.toUpperCase() === 'PASSED';
+
       if (existing) {
-        res.status(400).json({ success: false, message: 'An inspection has already been recorded for this application.' });
+        if (req.body.isUpdate || req.body.allowUpdate) {
+          const updatedInspection = await prisma.inspection.update({
+            where: { id: existing.id },
+            data: {
+              visualCheckPassed: visualCheckPassed !== undefined ? Boolean(visualCheckPassed) : true,
+              repeatabilityCheckPassed: repeatabilityCheckPassed !== undefined ? Boolean(repeatabilityCheckPassed) : true,
+              eccentricityErrorMm: eccentricityErrorMm ? parseFloat(eccentricityErrorMm) : null,
+              maxPermissibleErrorMpe: maxPermissibleErrorMpe ? parseFloat(maxPermissibleErrorMpe) : null,
+              observedError: observedError !== undefined ? parseFloat(observedError) : 0.0,
+              testWeightsUsed,
+              securitySealNumber,
+              result: isPass ? 'PASS' : 'FAIL',
+              officerNotes: officerNotes || null,
+              photoEvidenceUrl: photoEvidenceUrl || undefined
+            }
+          });
+
+          await prisma.application.update({
+            where: { id: applicationId },
+            data: {
+              status: isPass ? 'INSPECTION_COMPLETED' : 'REJECTED',
+              rejectionReason: isPass ? null : (officerNotes || 'Failed statutory accuracy verification limits.')
+            }
+          });
+
+          await LedgerService.appendEntry({
+            eventType: 'INSPECTION_UPDATED',
+            entityType: 'INSPECTION',
+            entityId: updatedInspection.id,
+            payload: {
+              inspectionId: updatedInspection.id,
+              applicationNumber: application.applicationNumber,
+              instrumentSerial: application.instrument.serialNumber,
+              result: updatedInspection.result,
+              securitySealNumber: updatedInspection.securitySealNumber,
+              observedError: updatedInspection.observedError,
+              officerNotes
+            },
+            actorId: req.user.id
+          });
+
+          res.status(200).json({
+            success: true,
+            message: 'Inspection observations updated successfully.',
+            data: updatedInspection
+          });
+          return;
+        }
+
+        res.status(400).json({ success: false, message: 'An inspection has already been recorded for this application. Use update option to amend observations.' });
         return;
       }
 
@@ -213,4 +264,92 @@ export class InspectionController {
       res.status(500).json({ success: false, message: 'Error syncing offline batch.', error: error.message });
     }
   }
+
+  public static async updateInspection(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ success: false, message: 'Unauthorized' });
+        return;
+      }
+
+      const id = String(req.params.id);
+      const {
+        visualCheckPassed,
+        repeatabilityCheckPassed,
+        eccentricityErrorMm,
+        maxPermissibleErrorMpe,
+        observedError,
+        testWeightsUsed,
+        securitySealNumber,
+        result,
+        officerNotes,
+        photoEvidenceUrl
+      } = req.body;
+
+      const inspection = await prisma.inspection.findFirst({
+        where: {
+          OR: [
+            { id },
+            { applicationId: id }
+          ]
+        },
+        include: { application: true }
+      });
+
+      if (!inspection) {
+        res.status(404).json({ success: false, message: 'Inspection record not found.' });
+        return;
+      }
+
+      const isPass = result ? (result.toUpperCase() === 'PASS' || result.toUpperCase() === 'PASSED') : undefined;
+
+      const updatedInspection = await prisma.inspection.update({
+        where: { id: inspection.id },
+        data: {
+          visualCheckPassed: visualCheckPassed !== undefined ? Boolean(visualCheckPassed) : undefined,
+          repeatabilityCheckPassed: repeatabilityCheckPassed !== undefined ? Boolean(repeatabilityCheckPassed) : undefined,
+          eccentricityErrorMm: eccentricityErrorMm !== undefined ? parseFloat(eccentricityErrorMm) : undefined,
+          maxPermissibleErrorMpe: maxPermissibleErrorMpe !== undefined ? parseFloat(maxPermissibleErrorMpe) : undefined,
+          observedError: observedError !== undefined ? parseFloat(observedError) : undefined,
+          testWeightsUsed: testWeightsUsed || undefined,
+          securitySealNumber: securitySealNumber || undefined,
+          result: isPass !== undefined ? (isPass ? 'PASS' : 'FAIL') : undefined,
+          officerNotes: officerNotes !== undefined ? officerNotes : undefined,
+          photoEvidenceUrl: photoEvidenceUrl || undefined
+        }
+      });
+
+      if (isPass !== undefined) {
+        await prisma.application.update({
+          where: { id: inspection.applicationId },
+          data: {
+            status: isPass ? 'INSPECTION_COMPLETED' : 'REJECTED',
+            rejectionReason: isPass ? null : (officerNotes || 'Failed statutory accuracy verification limits.')
+          }
+        });
+      }
+
+      await LedgerService.appendEntry({
+        eventType: 'INSPECTION_UPDATED',
+        entityType: 'INSPECTION',
+        entityId: updatedInspection.id,
+        payload: {
+          inspectionId: updatedInspection.id,
+          applicationId: inspection.applicationId,
+          result: updatedInspection.result,
+          updatedBy: req.user.fullName
+        },
+        actorId: req.user.id
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Inspection observations updated successfully.',
+        data: updatedInspection
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: 'Error updating inspection.', error: error.message });
+    }
+  }
 }
+

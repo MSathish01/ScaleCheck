@@ -24,7 +24,9 @@ import {
   ArrowRight,
   Check,
   History,
-  Info
+  Info,
+  AlertTriangle,
+  Printer
 } from 'lucide-react';
 import { instrumentApi, applicationApi, analyticsApi, certificateApi } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -46,6 +48,8 @@ export const TraderDashboard: React.FC = () => {
   const [selectedInstId, setSelectedInstId] = useState<string>('');
   const [showLifecycleModal, setShowLifecycleModal] = useState<boolean>(false);
   const [selectedLifecycleInst, setSelectedLifecycleInst] = useState<any | null>(null);
+  const [showRejectionModal, setShowRejectionModal] = useState<boolean>(false);
+  const [selectedRejectedApp, setSelectedRejectedApp] = useState<any | null>(null);
   const [showNotifDrawer, setShowNotifDrawer] = useState<boolean>(false);
 
   // Add Instrument Form State
@@ -735,6 +739,36 @@ export const TraderDashboard: React.FC = () => {
                         )}
                       </div>
                     )}
+
+                    {/* Rejection Notice Callout Box if Rejected */}
+                    {app.status === 'REJECTED' && (
+                      <div className="p-4 bg-rose-50 rounded-2xl border border-rose-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start gap-2.5">
+                          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-extrabold text-rose-900 block text-sm">
+                              Statutory Verification Non-Conformance (Form VIII Notice)
+                            </span>
+                            <p className="text-rose-800 text-[11px] mt-0.5 font-medium">
+                              {app.rejectionReason || app.inspection?.officerNotes || 'Observed error exceeded Maximum Permissible Error (MPE) limit.'}
+                            </p>
+                            <span className="text-[10px] text-rose-600 font-semibold block mt-1">
+                              ⚖️ Under Section 24, Legal Metrology Act, 2009: 7-day cure period to adjust instrument with licensed repairer.
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedRejectedApp(app);
+                            setShowRejectionModal(true);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shrink-0 shadow-xs transition cursor-pointer"
+                        >
+                          View Form VIII Notice
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -1265,6 +1299,106 @@ export const TraderDashboard: React.FC = () => {
                 alt="Evidence Full View"
                 className="max-h-[70vh] w-auto object-contain"
               />
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Trader Rejection Notice Modal (FORM VIII) */}
+      {showRejectionModal && selectedRejectedApp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-rose-200">
+            <div className="border-b border-rose-100 pb-4 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-rose-100 text-rose-700">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-800 bg-rose-50 px-2 py-0.5 rounded">
+                      Form VIII • Section 24, Legal Metrology Act, 2009
+                    </span>
+                    <h3 className="text-lg font-black text-slate-900">Statutory Rejection Notice</h3>
+                  </div>
+                </div>
+                <button onClick={() => setShowRejectionModal(false)}>
+                  <X className="w-5 h-5 text-slate-400 hover:text-slate-600" />
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Official notice of verification rejection and non-conformance of measuring instrument
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs mb-4">
+              <div>
+                <span className="text-slate-400 block text-[10px] font-bold uppercase">Application Reference</span>
+                <span className="font-mono font-bold text-blue-900">{selectedRejectedApp.applicationNumber}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] font-bold uppercase">Instrument Serial</span>
+                <span className="font-mono font-bold text-slate-900">{selectedRejectedApp.instrument?.serialNumber}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] font-bold uppercase">Trader / Firm</span>
+                <span className="font-bold text-slate-900">{selectedRejectedApp.trader?.fullName || user?.fullName}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] font-bold uppercase">Premises Location</span>
+                <span className="text-slate-700 truncate block">{selectedRejectedApp.instrument?.installationAddress}</span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-rose-50/80 border border-rose-200 text-xs space-y-2 mb-4">
+              <div className="flex items-center gap-1.5 text-rose-900 font-extrabold text-sm">
+                <AlertCircle className="w-4 h-4 text-rose-600" />
+                Reason for Rejection:
+              </div>
+              <div className="p-3 bg-white rounded-xl border border-rose-200 text-rose-950 font-semibold font-mono text-xs">
+                {selectedRejectedApp.rejectionReason || selectedRejectedApp.inspection?.officerNotes || 'Observed error exceeded Maximum Permissible Error (MPE) limit.'}
+              </div>
+
+              {selectedRejectedApp.inspection && (
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-rose-200/60 text-[11px]">
+                  <div>
+                    <span className="text-slate-500 block">Observed Error:</span>
+                    <span className="font-bold text-rose-700 font-mono">+{selectedRejectedApp.inspection.observedError}g</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">MPE Limit:</span>
+                    <span className="font-bold text-slate-700 font-mono">±{selectedRejectedApp.inspection.maxPermissibleErrorMpe}g</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Seal Recorded:</span>
+                    <span className="font-mono text-slate-700">{selectedRejectedApp.inspection.securitySealNumber || 'WITHHELD'}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 space-y-1 mb-5">
+              <span className="font-extrabold block">⚖️ Legal Metrology Rectification Directive:</span>
+              <p>
+                Under Section 24 of the Legal Metrology Act, 2009, this measuring instrument is strictly barred from commercial use.
+                You are granted a <strong>7-day statutory rectification window</strong> to have the scale serviced by an authorized repairer and apply for re-verification.
+              </p>
+            </div>
+
+            <div className="flex justify-between items-center pt-2">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 text-xs transition cursor-pointer"
+              >
+                <Printer className="w-4 h-4 text-slate-500" />
+                <span>Print Notice</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRejectionModal(false)}
+                className="px-5 py-2 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 text-xs transition cursor-pointer"
+              >
+                Acknowledge & Close
+              </button>
             </div>
           </div>
         </div>

@@ -43,6 +43,7 @@ export const applicationApi = {
 
 export const inspectionApi = {
   record: (data: any) => api.post('/inspections/record', data),
+  update: (id: string, data: any) => api.put(`/inspections/${id}`, data),
   syncOffline: (inspections: any[]) => api.post('/inspections/sync-offline', { inspections })
 };
 
