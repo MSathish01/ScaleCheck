@@ -1,5 +1,3 @@
-import http from 'http';
-
 const BASE_URL = 'http://localhost:5000';
 
 interface TestResult {
@@ -13,46 +11,31 @@ interface TestResult {
 
 const results: TestResult[] = [];
 
-function request(options: {
+async function request(options: {
   path: string;
   method: string;
   headers?: Record<string, string>;
   body?: any;
 }): Promise<{ statusCode: number; data: any }> {
-  return new Promise((resolve, reject) => {
-    const url = new URL(options.path, BASE_URL);
-    const postData = options.body ? JSON.stringify(options.body) : undefined;
-
-    const req = http.request(
-      url,
-      {
-        method: options.method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(postData ? { 'Content-Length': Buffer.byteLength(postData) } : {}),
-          ...options.headers,
-        },
-      },
-      (res) => {
-        let rawData = '';
-        res.on('data', (chunk) => {
-          rawData += chunk;
-        });
-        res.on('end', () => {
-          try {
-            const data = rawData ? JSON.parse(rawData) : {};
-            resolve({ statusCode: res.statusCode || 500, data });
-          } catch {
-            resolve({ statusCode: res.statusCode || 500, data: rawData });
-          }
-        });
-      }
-    );
-
-    req.on('error', (err) => reject(err));
-    if (postData) req.write(postData);
-    req.end();
+  const url = `${BASE_URL}${options.path}`;
+  const res = await fetch(url, {
+    method: options.method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
   });
+
+  const text = await res.text();
+  let data: any = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = text;
+  }
+
+  return { statusCode: res.status, data };
 }
 
 async function runTests() {
