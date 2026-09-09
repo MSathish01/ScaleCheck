@@ -87,134 +87,176 @@ export class PdfService {
 
       doc.fillColor('#0b2545').fontSize(9).font('Helvetica-Bold')
         .text('CERTIFICATE NO:', 46, startBannerY + 6);
-      doc.fillColor('#1e293b').fontSize(10).font('Helvetica-Bold')
-        .text(data.certificateNumber, 150, startBannerY + 6);
+      doc.fillColor('#1e293b').fontSize(9.5).font('Helvetica-Bold')
+        .text(data.certificateNumber, 150, startBannerY + 6, { width: 195 });
 
       doc.fillColor('#0b2545').fontSize(9).font('Helvetica-Bold')
         .text('STATUS:', 46, startBannerY + 19);
       doc.fillColor('#16a34a').fontSize(9).font('Helvetica-Bold')
-        .text('VERIFIED & STAMPED (ACTIVE)', 150, startBannerY + 19);
+        .text('VERIFIED & STAMPED (ACTIVE)', 150, startBannerY + 19, { width: 195 });
 
       doc.fillColor('#0b2545').fontSize(8.5).font('Helvetica-Bold')
-        .text('ISSUE DATE:', 350, startBannerY + 6);
+        .text('ISSUE DATE:', 355, startBannerY + 6);
       doc.fillColor('#334155').fontSize(8.5).font('Helvetica')
-        .text(new Date(data.issueDate).toLocaleDateString('en-IN'), 440, startBannerY + 6);
+        .text(new Date(data.issueDate).toLocaleDateString('en-IN'), 440, startBannerY + 6, { width: 105 });
 
       doc.fillColor('#0b2545').fontSize(8.5).font('Helvetica-Bold')
-        .text('VALID UPTO:', 350, startBannerY + 19);
+        .text('VALID UPTO:', 355, startBannerY + 19);
       doc.fillColor('#dc2626').fontSize(8.5).font('Helvetica-Bold')
-        .text(new Date(data.validityExpiryDate).toLocaleDateString('en-IN'), 440, startBannerY + 19);
-
-      doc.y = startBannerY + 44;
+        .text(new Date(data.validityExpiryDate).toLocaleDateString('en-IN'), 440, startBannerY + 19, { width: 105 });
 
       // Section 1: Trader & Location Details
+      const sec1HeadingY = startBannerY + 44;
       doc.fontSize(9.5).fillColor('#0b2545').font('Helvetica-Bold')
-        .text('1. STAKEHOLDER & PREMISES DETAILS');
-      doc.moveDown(0.2);
+        .text('1. STAKEHOLDER & PREMISES DETAILS', 40, sec1HeadingY);
 
-      doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#334155').text('Owner / Establishment: ', 45, doc.y, { continued: true });
-      doc.font('Helvetica').fillColor('#0f172a').text(`${data.organizationName || data.traderName} (${data.traderName})`);
+      const sec1ContentY = sec1HeadingY + 14;
+      doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#334155')
+        .text('Owner / Establishment: ', 45, sec1ContentY, { continued: true });
+      doc.font('Helvetica').fillColor('#0f172a')
+        .text(`${data.organizationName || data.traderName} (${data.traderName})`);
       
-      doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#334155').text('Installation Premises: ', 45, doc.y + 2, { continued: true });
-      doc.font('Helvetica').fillColor('#0f172a').text(data.tradeAddress);
-
-      doc.moveDown(0.8);
+      doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#334155')
+        .text('Installation Premises: ', 45, doc.y + 2, { continued: true });
+      doc.font('Helvetica').fillColor('#0f172a')
+        .text(data.tradeAddress);
 
       // Section 2: Instrument Details Table
+      const sec2HeadingY = doc.y + 14;
       doc.fontSize(9.5).fillColor('#0b2545').font('Helvetica-Bold')
-        .text('2. VERIFIED INSTRUMENT SPECIFICATIONS');
-      doc.moveDown(0.3);
+        .text('2. VERIFIED INSTRUMENT SPECIFICATIONS', 40, sec2HeadingY);
 
-      const tableTop = doc.y;
-      const col1 = 45;
-      const col2 = 175;
-      const col3 = 310;
-      const col4 = 440;
+      const tableTop = sec2HeadingY + 15;
+      const tableHeight = 74;
+      doc.rect(40, tableTop, 515, tableHeight).lineWidth(0.5).strokeColor('#cbd5e1').stroke();
 
-      doc.rect(40, tableTop, 515, 60).lineWidth(0.5).strokeColor('#cbd5e1').stroke();
+      // Horizontal dividers inside table for clean structure
+      doc.strokeColor('#e2e8f0').lineWidth(0.5)
+        .moveTo(40, tableTop + 24).lineTo(555, tableTop + 24).stroke()
+        .moveTo(40, tableTop + 49).lineTo(555, tableTop + 49).stroke();
+
+      const c1LabelX = 46;
+      const c1LabelW = 100;
+      const c1ValX = 148;
+      const c1ValW = 144;
+
+      const c2LabelX = 296;
+      const c2LabelW = 100;
+      const c2ValX = 398;
+      const c2ValW = 152;
 
       // Row 1
-      doc.fontSize(8).font('Helvetica-Bold').fillColor('#475569').text('Instrument Category:', col1, tableTop + 6);
-      doc.font('Helvetica').fillColor('#0f172a').text(data.instrumentCategory, col2, tableTop + 6);
-      doc.font('Helvetica-Bold').fillColor('#475569').text('Serial Number:', col3, tableTop + 6);
-      doc.font('Helvetica-Bold').fillColor('#0b2545').text(data.instrumentSerial, col4, tableTop + 6);
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#475569')
+        .text('Instrument Category:', c1LabelX, tableTop + 6, { width: c1LabelW });
+      doc.font('Helvetica').fillColor('#0f172a')
+        .text(data.instrumentCategory, c1ValX, tableTop + 6, { width: c1ValW });
 
-      // Row 2
-      doc.font('Helvetica-Bold').fillColor('#475569').text('Make & Model:', col1, tableTop + 24);
-      doc.font('Helvetica').fillColor('#0f172a').text(data.makeAndModel, col2, tableTop + 24);
-      doc.font('Helvetica-Bold').fillColor('#475569').text('Model Approval No:', col3, tableTop + 24);
-      doc.font('Helvetica').fillColor('#0f172a').text(data.modelApprovalNumber, col4, tableTop + 24);
+      doc.font('Helvetica-Bold').fillColor('#475569')
+        .text('Serial Number:', c2LabelX, tableTop + 6, { width: c2LabelW });
+      doc.font('Helvetica-Bold').fillColor('#0b2545')
+        .text(data.instrumentSerial, c2ValX, tableTop + 6, { width: c2ValW });
+
+      // Row 2 (Make & Model gets 2-line safety with compact 7.5pt and bounded width)
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#475569')
+        .text('Make & Model:', c1LabelX, tableTop + 28, { width: c1LabelW });
+      doc.fontSize(7.5).font('Helvetica').fillColor('#0f172a')
+        .text(data.makeAndModel, c1ValX, tableTop + 26, { width: c1ValW, height: 20, ellipsis: true });
+
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#475569')
+        .text('Model Approval No:', c2LabelX, tableTop + 28, { width: c2LabelW });
+      doc.font('Helvetica').fillColor('#0f172a')
+        .text(data.modelApprovalNumber, c2ValX, tableTop + 28, { width: c2ValW });
 
       // Row 3
-      doc.font('Helvetica-Bold').fillColor('#475569').text('Maximum Capacity:', col1, tableTop + 42);
-      doc.font('Helvetica-Bold').fillColor('#0b2545').text(data.capacity, col2, tableTop + 42);
-      doc.font('Helvetica-Bold').fillColor('#475569').text('Accuracy Class:', col3, tableTop + 42);
-      doc.font('Helvetica-Bold').fillColor('#0b2545').text(data.accuracyClass, col4, tableTop + 42);
+      doc.font('Helvetica-Bold').fillColor('#475569')
+        .text('Maximum Capacity:', c1LabelX, tableTop + 54, { width: c1LabelW });
+      doc.font('Helvetica-Bold').fillColor('#0b2545')
+        .text(data.capacity, c1ValX, tableTop + 54, { width: c1ValW });
 
-      doc.y = tableTop + 72;
+      doc.font('Helvetica-Bold').fillColor('#475569')
+        .text('Accuracy Class:', c2LabelX, tableTop + 54, { width: c2LabelW });
+      doc.font('Helvetica-Bold').fillColor('#0b2545')
+        .text(data.accuracyClass, c2ValX, tableTop + 54, { width: c2ValW });
 
       // Section 3: Legal Metrology Test Observations
+      const sec3HeadingY = tableTop + tableHeight + 14;
       doc.fontSize(9.5).fillColor('#0b2545').font('Helvetica-Bold')
-        .text('3. STATUTORY VERIFICATION & STAMPING RECORD');
-      doc.moveDown(0.3);
+        .text('3. STATUTORY VERIFICATION & STAMPING RECORD', 40, sec3HeadingY);
 
-      const testTableTop = doc.y;
-      doc.rect(40, testTableTop, 515, 52).lineWidth(0.5).strokeColor('#cbd5e1').stroke();
+      const testTableTop = sec3HeadingY + 15;
+      const testTableHeight = 56;
+      doc.rect(40, testTableTop, 515, testTableHeight).lineWidth(0.5).strokeColor('#cbd5e1').stroke();
 
-      doc.fontSize(8).font('Helvetica-Bold').fillColor('#475569').text('Working Standards Used:', col1, testTableTop + 6);
-      doc.font('Helvetica').fillColor('#0f172a').text(data.testWeightsUsed, col2, testTableTop + 6, { width: 370 });
+      // Divider inside test table
+      doc.strokeColor('#e2e8f0').lineWidth(0.5)
+        .moveTo(40, testTableTop + 20).lineTo(555, testTableTop + 20).stroke()
+        .moveTo(40, testTableTop + 38).lineTo(555, testTableTop + 38).stroke();
 
-      doc.font('Helvetica-Bold').fillColor('#475569').text('Official Security Seal No:', col1, testTableTop + 22);
-      doc.font('Helvetica-Bold').fillColor('#0b2545').text(data.securitySealNumber, col2, testTableTop + 22);
+      // Row 1
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#475569')
+        .text('Working Standards Used:', c1LabelX, testTableTop + 5, { width: 120 });
+      doc.font('Helvetica').fillColor('#0f172a')
+        .text(data.testWeightsUsed, c1ValX + 5, testTableTop + 5, { width: 395 });
+
+      // Row 2
+      doc.font('Helvetica-Bold').fillColor('#475569')
+        .text('Official Security Seal No:', c1LabelX, testTableTop + 24, { width: c1LabelW + 15 });
+      doc.font('Helvetica-Bold').fillColor('#0b2545')
+        .text(data.securitySealNumber, c1ValX + 5, testTableTop + 24, { width: c1ValW - 5 });
 
       const mpeText = data.maxPermissibleErrorMpe !== undefined && data.maxPermissibleErrorMpe !== null ? `± ${data.maxPermissibleErrorMpe}` : 'Within Limits';
       const obsText = data.observedError !== undefined && data.observedError !== null ? `${data.observedError}` : '0.00';
 
-      doc.font('Helvetica-Bold').fillColor('#475569').text('Permissible MPE:', col3, testTableTop + 22);
-      doc.font('Helvetica').fillColor('#0f172a').text(mpeText, col4, testTableTop + 22);
+      doc.font('Helvetica-Bold').fillColor('#475569')
+        .text('Permissible MPE:', c2LabelX, testTableTop + 24, { width: c2LabelW });
+      doc.font('Helvetica').fillColor('#0f172a')
+        .text(mpeText, c2ValX, testTableTop + 24, { width: c2ValW });
 
-      doc.font('Helvetica-Bold').fillColor('#475569').text('Observed Test Error:', col1, testTableTop + 36);
-      doc.font('Helvetica-Bold').fillColor('#16a34a').text(`${obsText} (PASSED)`, col2, testTableTop + 36);
+      // Row 3
+      doc.font('Helvetica-Bold').fillColor('#475569')
+        .text('Observed Test Error:', c1LabelX, testTableTop + 42, { width: c1LabelW + 15 });
+      doc.font('Helvetica-Bold').fillColor('#16a34a')
+        .text(`${obsText} (PASSED)`, c1ValX + 5, testTableTop + 42, { width: c1ValW - 5 });
 
-      doc.font('Helvetica-Bold').fillColor('#475569').text('Statutory Result:', col3, testTableTop + 36);
-      doc.font('Helvetica-Bold').fillColor('#16a34a').text('VERIFIED & STAMPED', col4, testTableTop + 36);
-
-      doc.y = testTableTop + 64;
+      doc.font('Helvetica-Bold').fillColor('#475569')
+        .text('Statutory Result:', c2LabelX, testTableTop + 42, { width: c2LabelW });
+      doc.font('Helvetica-Bold').fillColor('#16a34a')
+        .text('VERIFIED & STAMPED', c2ValX, testTableTop + 42, { width: c2ValW });
 
       // Section 4: Cryptographic Crowd-Verify & Officer Signatures
-      const bottomBoxY = doc.y;
-      doc.rect(40, bottomBoxY, 515, 145).lineWidth(0.5).strokeColor('#94a3b8').stroke();
+      const bottomBoxY = testTableTop + testTableHeight + 16;
+      doc.rect(40, bottomBoxY, 515, 140).lineWidth(0.5).strokeColor('#94a3b8').stroke();
 
       // Embed QR Code
-      doc.image(qrBuffer, 52, bottomBoxY + 8, { width: 120, height: 120 });
+      doc.image(qrBuffer, 50, bottomBoxY + 12, { width: 115, height: 115 });
 
-      // QR explanation
+      // QR explanation (Center Column)
       doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#0b2545')
-        .text('CROWD-VERIFICATION QR CODE', 185, bottomBoxY + 12);
+        .text('CROWD-VERIFICATION QR CODE', 178, bottomBoxY + 12, { width: 230 });
       doc.fontSize(7.5).font('Helvetica').fillColor('#334155')
-        .text('Scan this QR code with any smartphone camera to verify the live authenticity of this certificate directly on the Government National Legal Metrology portal.', 185, bottomBoxY + 25, { width: 220 });
+        .text('Scan this QR code with any smartphone camera to verify the live authenticity of this certificate directly on the Government National Legal Metrology portal.', 178, bottomBoxY + 26, { width: 226 });
 
       doc.fontSize(7).font('Helvetica-Bold').fillColor('#475569')
-        .text('SHA-256 DIGITAL PROOF HASH:', 185, bottomBoxY + 58);
-      doc.fontSize(6.5).font('Courier').fillColor('#0f172a')
-        .text(data.signedPayloadHash, 185, bottomBoxY + 68, { width: 220 });
+        .text('SHA-256 DIGITAL PROOF HASH:', 178, bottomBoxY + 62, { width: 226 });
+      doc.fontSize(6).font('Courier').fillColor('#0f172a')
+        .text(data.signedPayloadHash, 178, bottomBoxY + 73, { width: 226 });
 
       doc.fontSize(7).font('Helvetica-Bold').fillColor('#16a34a')
-        .text('CRYPTOGRAPHICALLY SECURED (NON-COUNTERFEITABLE)', 185, bottomBoxY + 95);
+        .text('CRYPTOGRAPHICALLY SECURED (NON-COUNTERFEITABLE)', 178, bottomBoxY + 105, { width: 226 });
 
       // Officer Signature Block on Right
       doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#0b2545')
-        .text('ISSUING AUTHORITY', 420, bottomBoxY + 15, { align: 'right' });
+        .text('ISSUING AUTHORITY', 415, bottomBoxY + 14, { width: 130, align: 'center' });
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#0f172a')
-        .text(data.officerName, 420, bottomBoxY + 40, { align: 'right' });
-      doc.fontSize(8).font('Helvetica').fillColor('#475569')
-        .text(data.officerDesignation, 420, bottomBoxY + 53, { align: 'right' });
-      doc.fontSize(8).font('Helvetica').fillColor('#475569')
-        .text(data.jurisdiction, 420, bottomBoxY + 65, { align: 'right' });
+        .text(data.officerName, 415, bottomBoxY + 36, { width: 130, align: 'center' });
+      doc.fontSize(7.5).font('Helvetica').fillColor('#475569')
+        .text(data.officerDesignation, 415, bottomBoxY + 50, { width: 130, align: 'center' });
+      doc.fontSize(7.5).font('Helvetica').fillColor('#475569')
+        .text(data.jurisdiction, 415, bottomBoxY + 62, { width: 130, align: 'center' });
 
-      doc.rect(420, bottomBoxY + 85, 120, 22).strokeColor('#0b2545').stroke();
+      doc.rect(420, bottomBoxY + 84, 120, 24).lineWidth(0.75).strokeColor('#0b2545').stroke();
       doc.fontSize(7.5).font('Helvetica-Bold').fillColor('#0b2545')
-        .text('DIGITALLY SIGNED', 420, bottomBoxY + 91, { width: 120, align: 'center' });
+        .text('DIGITALLY SIGNED', 420, bottomBoxY + 92, { width: 120, align: 'center' });
 
       // Footer Statutory Note
       doc.fontSize(7).fillColor('#64748b').font('Helvetica')

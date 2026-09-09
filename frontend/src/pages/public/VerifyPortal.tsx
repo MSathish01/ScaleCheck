@@ -215,30 +215,30 @@ export const VerifyPortal: React.FC = () => {
                     <CheckCircle2 className="w-4 h-4 text-blue-600" />
                     {t('verifyPage.instrumentDetails')}
                   </h4>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Category:</span>
-                      <span className="font-bold text-slate-800">{certData.data.instrument.category}</span>
+                  <div className="space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500 whitespace-nowrap">Category:</span>
+                      <span className="font-bold text-slate-800 text-right">{certData.data.instrument.category}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Serial Number:</span>
-                      <span className="font-bold font-mono text-blue-900">{certData.data.instrument.serialNumber}</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500 whitespace-nowrap">Serial Number:</span>
+                      <span className="font-bold font-mono text-blue-900 text-right">{certData.data.instrument.serialNumber}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Make & Model:</span>
-                      <span className="font-bold text-slate-800">{certData.data.instrument.makeAndModel}</span>
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-slate-500 whitespace-nowrap">Make & Model:</span>
+                      <span className="font-bold text-slate-800 text-right max-w-[65%]">{certData.data.instrument.makeAndModel}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Model Approval No:</span>
-                      <span className="font-mono text-slate-700">{certData.data.instrument.modelApprovalNumber}</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500 whitespace-nowrap">Model Approval No:</span>
+                      <span className="font-mono text-slate-700 text-right">{certData.data.instrument.modelApprovalNumber}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Max Capacity:</span>
-                      <span className="font-bold text-slate-900">{certData.data.instrument.capacity}</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500 whitespace-nowrap">Max Capacity:</span>
+                      <span className="font-bold text-slate-900 text-right">{certData.data.instrument.capacity}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Accuracy Class:</span>
-                      <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-extrabold">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500 whitespace-nowrap">Accuracy Class:</span>
+                      <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-extrabold text-right">
                         {certData.data.instrument.accuracyClass}
                       </span>
                     </div>
