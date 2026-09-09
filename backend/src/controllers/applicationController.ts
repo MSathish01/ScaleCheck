@@ -11,7 +11,7 @@ export class ApplicationController {
         return;
       }
 
-      const { instrumentId, type, preferredTargetType, remarks } = req.body;
+      const { instrumentId, type, preferredTargetType, preferredDate, remarks } = req.body;
 
       if (!instrumentId || !type) {
         res.status(400).json({ success: false, message: 'Instrument ID and application type are required.' });
@@ -69,6 +69,15 @@ export class ApplicationController {
       const count = await prisma.application.count();
       const applicationNumber = `APP-${new Date().getFullYear()}-${String(count + 1).padStart(5, '0')}`;
 
+      let finalRemarks = remarks || '';
+      if (preferredDate) {
+        const prefFormatted = new Date(preferredDate).toLocaleString('en-IN');
+        finalRemarks = `[Requested Slot: ${prefFormatted}] ${finalRemarks}`.trim();
+      }
+      if (earlyDiscount) {
+        finalRemarks = `${finalRemarks} (Early-renewal incentive applied.)`.trim();
+      }
+
       const application = await prisma.application.create({
         data: {
           applicationNumber,
@@ -80,7 +89,7 @@ export class ApplicationController {
           feeAmount: Math.round(baseFee),
           feePaymentStatus: 'PAID',
           feeTransactionRef: `TXN-${Date.now().toString(36).toUpperCase()}`,
-          remarks: remarks || (earlyDiscount ? 'Early-renewal priority incentive applied.' : null)
+          remarks: finalRemarks || null
         },
         include: {
           instrument: true
@@ -109,14 +118,32 @@ export class ApplicationController {
         actorId: req.user.id
       });
 
-      // Send in-app and SMS notification
+      // Send in-app and SMS notification to Trader
       await NotificationService.sendNotification({
         userId: req.user.id,
         type: 'SCHEDULE_UPDATE',
         title: `Verification Application Submitted: ${application.applicationNumber}`,
-        message: `Your application for instrument #${instrument.serialNumber} has been received. Allocation to the jurisdictional Legal Metrology Officer is in progress.`,
-        channel: 'SMS_STUB'
+        message: `Your application for instrument #${instrument.serialNumber} has been received. Statutory fee of ₹${application.feeAmount} paid. Officer allocation in progress.`,
+        channel: 'IN_APP'
       });
+
+      // Notify district LMO officers of pending job
+      try {
+        const districtOfficers = await prisma.user.findMany({
+          where: { role: 'LMO', district: instrument.district }
+        });
+        for (const officer of districtOfficers) {
+          await NotificationService.sendNotification({
+            userId: officer.id,
+            type: 'INSPECTION_ASSIGNED',
+            title: `New Verification Application: ${application.applicationNumber}`,
+            message: `Trader ${req.user.fullName} submitted verification for #${instrument.serialNumber} (${instrument.makeAndModel})${preferredDate ? ` with preferred slot ${new Date(preferredDate).toLocaleString('en-IN')}` : ''}.`,
+            channel: 'IN_APP'
+          });
+        }
+      } catch (errOfficers) {
+        console.error('Failed to notify officers:', errOfficers);
+      }
 
       res.status(201).json({
         success: true,
@@ -251,16 +278,23 @@ export class ApplicationController {
         return;
       }
 
+      const currentApp = await prisma.application.findUnique({
+        where: { id: applicationId },
+        include: { allocatedTo: true }
+      });
+
       const updated = await prisma.application.update({
         where: { id: applicationId },
         data: {
           scheduledDate: new Date(scheduledDate),
           status: 'SCHEDULED',
-          remarks: remarks || undefined
+          remarks: remarks || undefined,
+          allocatedToId: currentApp?.allocatedToId || req.user?.id
         },
         include: {
           instrument: true,
-          trader: true
+          trader: true,
+          allocatedTo: { select: { fullName: true, role: true, phone: true } }
         }
       });
 
@@ -272,7 +306,8 @@ export class ApplicationController {
         payload: {
           applicationNumber: updated.applicationNumber,
           scheduledDate: updated.scheduledDate?.toISOString(),
-          instrumentSerial: updated.instrument.serialNumber
+          instrumentSerial: updated.instrument.serialNumber,
+          officerName: req.user?.fullName
         },
         actorId: req.user?.id
       });
@@ -282,8 +317,8 @@ export class ApplicationController {
         userId: updated.traderId,
         type: 'SCHEDULE_UPDATE',
         title: `Verification Inspection Scheduled: ${updated.applicationNumber}`,
-        message: `Your inspection for instrument #${updated.instrument.serialNumber} is scheduled for ${new Date(scheduledDate).toLocaleString('en-IN')}. Please ensure standard working standards access.`,
-        channel: 'SMS_STUB'
+        message: `Your inspection for instrument #${updated.instrument.serialNumber} has been scheduled for ${new Date(scheduledDate).toLocaleString('en-IN')}${req.user ? ` by Legal Metrology Officer ${req.user.fullName}` : ''}. Please ensure equipment and test weights area are ready.`,
+        channel: 'IN_APP'
       });
 
       res.status(200).json({ success: true, message: 'Inspection date successfully scheduled.', data: updated });

@@ -343,14 +343,60 @@ export const LmoWorkbench: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h3 className="text-base font-bold text-slate-900">Schedule Field Inspection</h3>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Schedule Field Inspection</h3>
+                <p className="text-xs text-slate-500">Coordinate on-site testing appointment with trader</p>
+              </div>
               <button onClick={() => setShowScheduleModal(false)}>
-                <X className="w-5 h-5 text-slate-400" />
+                <X className="w-5 h-5 text-slate-400 hover:text-slate-600" />
               </button>
             </div>
+
+            {selectedApp && (
+              <div className="mb-4 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Trader:</span>
+                  <span className="font-bold text-slate-900">{selectedApp.trader?.fullName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Premises:</span>
+                  <span className="font-bold text-slate-800 text-right">{selectedApp.instrument?.installationAddress}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Instrument:</span>
+                  <span className="font-mono font-bold text-blue-900">{selectedApp.instrument?.serialNumber}</span>
+                </div>
+                {selectedApp.remarks && (
+                  <div className="pt-2 mt-2 border-t border-slate-200">
+                    <span className="block text-[11px] font-bold text-amber-900 uppercase tracking-wide">
+                      Trader Preferred Slot & Request:
+                    </span>
+                    <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 font-medium mt-1">
+                      {selectedApp.remarks}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        tomorrow.setHours(10, 30, 0, 0);
+                        // Format for datetime-local
+                        const pad = (n: number) => n < 10 ? '0' + n : n;
+                        const formatted = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}T10:30`;
+                        setScheduleDate(formatted);
+                      }}
+                      className="mt-2 w-full py-1.5 px-3 rounded-lg bg-blue-900 text-white font-bold text-xs hover:bg-blue-800 transition shadow-xs flex items-center justify-center gap-1"
+                    >
+                      <span>⚡ Accept Preferred Morning Slot (Tomorrow 10:30 AM)</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             <form onSubmit={handleScheduleSubmit} className="space-y-4 text-xs font-medium">
               <div>
-                <label className="block text-slate-700 font-bold mb-1">Inspection Date & Time</label>
+                <label className="block text-slate-700 font-bold mb-1">Confirmed Inspection Date & Time</label>
                 <input
                   type="datetime-local"
                   required
@@ -360,12 +406,12 @@ export const LmoWorkbench: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-slate-700 font-bold mb-1">Special Instructions for Trader</label>
+                <label className="block text-slate-700 font-bold mb-1">Officer Notes & Working Standards Notice</label>
                 <textarea
                   rows={2}
                   value={scheduleRemarks}
                   onChange={(e) => setScheduleRemarks(e.target.value)}
-                  placeholder="e.g. Ensure platform is clean and clear of goods before testing."
+                  placeholder="e.g. Inspecting with standard 20kg M1 weights. Please ensure scale platform is clear."
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm"
                 />
               </div>
@@ -373,16 +419,16 @@ export const LmoWorkbench: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowScheduleModal(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 font-bold text-slate-700"
+                  className="px-4 py-2 rounded-xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={scheduling}
-                  className="px-5 py-2 rounded-xl bg-blue-900 text-white font-bold hover:bg-blue-800"
+                  className="px-5 py-2 rounded-xl bg-blue-900 text-white font-bold hover:bg-blue-800 shadow-sm"
                 >
-                  {scheduling ? 'Saving...' : 'Confirm Schedule'}
+                  {scheduling ? 'Updating Schedule...' : 'Confirm & Notify Trader'}
                 </button>
               </div>
             </form>
