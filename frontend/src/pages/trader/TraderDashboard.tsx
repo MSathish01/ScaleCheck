@@ -56,7 +56,8 @@ export const TraderDashboard: React.FC = () => {
   const [newAccuracyClass, setNewAccuracyClass] = useState<string>('CLASS_III');
   const [newUsage, setNewUsage] = useState<string>('HIGH');
   const [newAddress, setNewAddress] = useState<string>('');
-  const [newPhotoUrl, setNewPhotoUrl] = useState<string>('');
+  const [newPhotoUrls, setNewPhotoUrls] = useState<string[]>([]);
+  const [activeLightboxImg, setActiveLightboxImg] = useState<string | null>(null);
   const [submittingInst, setSubmittingInst] = useState<boolean>(false);
 
   // Apply Verification Form State
@@ -91,14 +92,28 @@ export const TraderDashboard: React.FC = () => {
   }, []);
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewPhotoUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const fileList = Array.from(files);
+      fileList.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (reader.result) {
+            setNewPhotoUrls((prev) => {
+              if (prev.length >= 6) return prev;
+              return [...prev, reader.result as string];
+            });
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
+    // reset input so same file can be re-selected if removed
+    e.target.value = '';
+  };
+
+  const removePhoto = (index: number) => {
+    setNewPhotoUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   const applyPreset = (preset: 'SCALE' | 'DISPENSER' | 'WEIGHBRIDGE') => {
@@ -111,7 +126,11 @@ export const TraderDashboard: React.FC = () => {
       setNewCapacity('30 kg (e=5g)');
       setNewAccuracyClass('CLASS_III');
       setNewUsage('HIGH');
-      setNewPhotoUrl('https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80');
+      setNewPhotoUrls([
+        'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1584483766114-2cea6facdf57?w=600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80'
+      ]);
     } else if (preset === 'DISPENSER') {
       setNewSerial(`MID-2026-PY-${rand}`);
       setNewCategory('FUEL_DISPENSER');
@@ -120,7 +139,10 @@ export const TraderDashboard: React.FC = () => {
       setNewCapacity('50 L/min (±0.3%)');
       setNewAccuracyClass('CLASS_II');
       setNewUsage('HIGH');
-      setNewPhotoUrl('https://images.unsplash.com/photo-1527018607616-a656a38147ea?w=600&auto=format&fit=crop&q=80');
+      setNewPhotoUrls([
+        'https://images.unsplash.com/photo-1527018607616-a656a38147ea?w=600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&auto=format&fit=crop&q=80'
+      ]);
     } else {
       setNewSerial(`AVY-2026-PY-${rand}`);
       setNewCategory('WEIGHBRIDGE');
@@ -129,7 +151,10 @@ export const TraderDashboard: React.FC = () => {
       setNewCapacity('60,000 kg (e=10kg)');
       setNewAccuracyClass('CLASS_IIII');
       setNewUsage('INDUSTRIAL_HEAVY');
-      setNewPhotoUrl('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80');
+      setNewPhotoUrls([
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1508873696983-2df5293cb32f?w=600&auto=format&fit=crop&q=80'
+      ]);
     }
   };
 
@@ -148,9 +173,10 @@ export const TraderDashboard: React.FC = () => {
         installationAddress: newAddress || `${user?.district || 'Puducherry'}, ${user?.state || 'Puducherry'}`
       });
 
-      if (newPhotoUrl) {
+      if (newPhotoUrls.length > 0) {
         try {
-          localStorage.setItem(`inst_photo_${newSerial}`, newPhotoUrl);
+          localStorage.setItem(`inst_photos_${newSerial}`, JSON.stringify(newPhotoUrls));
+          localStorage.setItem(`inst_photo_${newSerial}`, newPhotoUrls[0]);
         } catch (storageErr) {
           console.warn('LocalStorage image quota exceeded, skipping thumbnail cache');
         }
@@ -162,7 +188,7 @@ export const TraderDashboard: React.FC = () => {
       setNewMake('');
       setNewApprovalNo('');
       setNewCapacity('');
-      setNewPhotoUrl('');
+      setNewPhotoUrls([]);
       fetchData();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to register instrument.');
@@ -403,19 +429,42 @@ export const TraderDashboard: React.FC = () => {
                   </tr>
                 ) : (
                   instruments.map((inst) => {
-                    const cachedPhoto = localStorage.getItem(`inst_photo_${inst.serialNumber}`);
+                    let photos: string[] = [];
+                    try {
+                      const raw = localStorage.getItem(`inst_photos_${inst.serialNumber}`);
+                      if (raw) photos = JSON.parse(raw);
+                      else {
+                        const single = localStorage.getItem(`inst_photo_${inst.serialNumber}`);
+                        if (single) photos = [single];
+                      }
+                    } catch (e) {
+                      const single = localStorage.getItem(`inst_photo_${inst.serialNumber}`);
+                      if (single) photos = [single];
+                    }
+
                     return (
                       <tr key={inst.id} className="hover:bg-slate-50/60 transition">
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-3">
-                            {cachedPhoto ? (
-                              <img
-                                src={cachedPhoto}
-                                alt="Scale"
-                                className="w-11 h-11 rounded-lg object-cover border border-slate-200 shadow-2xs"
-                              />
+                            {photos.length > 0 ? (
+                              <div
+                                className="relative cursor-pointer group"
+                                onClick={() => setActiveLightboxImg(photos[0])}
+                                title={`Click to view ${photos.length} evidence photo(s)`}
+                              >
+                                <img
+                                  src={photos[0]}
+                                  alt="Scale"
+                                  className="w-12 h-12 rounded-xl object-cover border border-slate-200 shadow-2xs group-hover:scale-105 transition"
+                                />
+                                {photos.length > 1 && (
+                                  <span className="absolute -bottom-1 -right-1 bg-blue-900 text-white font-black text-[9px] px-1.5 py-0.2 rounded-full shadow-xs border border-white">
+                                    +{photos.length - 1}
+                                  </span>
+                                )}
+                              </div>
                             ) : (
-                              <div className="w-11 h-11 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-900 shrink-0">
+                              <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-900 shrink-0">
                                 <Scale className="w-5 h-5" />
                               </div>
                             )}
@@ -738,39 +787,68 @@ export const TraderDashboard: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreateInstrument} className="space-y-4 text-xs font-medium">
-              {/* Photo Upload Box */}
+              {/* Multiple Photo Evidence Upload Box */}
               <div>
-                <label className="block text-slate-700 font-bold mb-1">
-                  Instrument & Stamping Plate Photo Evidence
-                </label>
-                <div className="flex items-center gap-3">
-                  {newPhotoUrl ? (
-                    <div className="relative">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-slate-700 font-bold">
+                    Instrument & Stamping Evidence Photos ({newPhotoUrls.length}/6)
+                  </label>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Nameplate, scale display, seal tag & shop location
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                  {newPhotoUrls.map((url, idx) => (
+                    <div key={idx} className="relative group rounded-xl overflow-hidden border-2 border-slate-200 hover:border-blue-500 bg-white aspect-square shadow-2xs transition">
                       <img
-                        src={newPhotoUrl}
-                        alt="Preview"
-                        className="w-20 h-20 rounded-xl object-cover border-2 border-blue-600 shadow-xs"
+                        src={url}
+                        alt={`Evidence ${idx + 1}`}
+                        className="w-full h-full object-cover cursor-pointer hover:scale-105 transition"
+                        onClick={() => setActiveLightboxImg(url)}
+                        title="Click to zoom preview"
                       />
+                      <span className="absolute bottom-1 left-1 bg-black/75 text-white text-[9px] font-mono font-bold px-1.5 py-0.5 rounded backdrop-blur-xs">
+                        #{idx + 1}
+                      </span>
                       <button
                         type="button"
-                        onClick={() => setNewPhotoUrl('')}
-                        className="absolute -top-1.5 -right-1.5 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-xs"
+                        onClick={() => removePhoto(idx)}
+                        className="absolute top-1 right-1 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-xs transition"
+                        title="Remove this photo"
                       >
                         <X className="w-3 h-3" />
                       </button>
                     </div>
-                  ) : (
-                    <label className="flex-1 flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl cursor-pointer bg-slate-50 transition">
-                      <Camera className="w-6 h-6 text-slate-400 mb-1" />
-                      <span className="font-bold text-slate-700 text-xs">Upload Nameplate Photo</span>
-                      <span className="text-[10px] text-slate-400">Click to attach image or use sample presets</span>
+                  ))}
+
+                  {newPhotoUrls.length < 6 && (
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 hover:border-blue-600 hover:bg-blue-50/60 rounded-xl cursor-pointer aspect-square transition p-2 text-center group">
+                      <Camera className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition mb-0.5" />
+                      <span className="text-[10px] font-bold text-slate-700 group-hover:text-blue-800 leading-tight">
+                        {newPhotoUrls.length === 0 ? 'Upload Photos' : '+ Add Photo'}
+                      </span>
+                      <span className="text-[8px] text-slate-400 font-medium">Multi-select</span>
                       <input
                         type="file"
+                        multiple
                         accept="image/*"
                         onChange={handlePhotoSelect}
                         className="hidden"
                       />
                     </label>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1 px-1">
+                  <span>💡 Tip: You can select multiple images at once or click + Add Photo to upload sequentially.</span>
+                  {newPhotoUrls.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setNewPhotoUrls([])}
+                      className="text-red-600 hover:underline font-bold"
+                    >
+                      Clear All Photos
+                    </button>
                   )}
                 </div>
               </div>
@@ -1088,6 +1166,46 @@ export const TraderDashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* Attached Photo Evidence Gallery in Dossier */}
+            {(() => {
+              let dossierPhotos: string[] = [];
+              try {
+                const raw = localStorage.getItem(`inst_photos_${selectedLifecycleInst.serialNumber}`);
+                if (raw) dossierPhotos = JSON.parse(raw);
+                else {
+                  const s = localStorage.getItem(`inst_photo_${selectedLifecycleInst.serialNumber}`);
+                  if (s) dossierPhotos = [s];
+                }
+              } catch (e) {
+                const s = localStorage.getItem(`inst_photo_${selectedLifecycleInst.serialNumber}`);
+                if (s) dossierPhotos = [s];
+              }
+
+              if (dossierPhotos.length === 0) return null;
+
+              return (
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                  <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide block mb-2">
+                    Attached Statutory Evidence Photos ({dossierPhotos.length}):
+                  </span>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {dossierPhotos.map((url, i) => (
+                      <div key={i} className="relative shrink-0 cursor-pointer group" onClick={() => setActiveLightboxImg(url)}>
+                        <img
+                          src={url}
+                          alt={`Evidence ${i + 1}`}
+                          className="w-16 h-16 rounded-xl object-cover border border-slate-300 group-hover:scale-105 transition"
+                        />
+                        <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[8px] font-bold px-1 rounded">
+                          #{i + 1}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Lifecycle Stages */}
             <div className="space-y-3 pt-2">
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">
@@ -1145,6 +1263,39 @@ export const TraderDashboard: React.FC = () => {
               >
                 Close Dossier
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal for High-Resolution Photo Evidence Inspection */}
+      {activeLightboxImg && (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/85 backdrop-blur-xs p-4"
+          onClick={() => setActiveLightboxImg(null)}
+        >
+          <div
+            className="relative max-w-3xl w-full max-h-[85vh] bg-white rounded-3xl overflow-hidden shadow-2xl p-4 border border-slate-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                <Camera className="w-4 h-4 text-blue-800" />
+                <span>Statutory Physical Instrument & Stamping Plate Photo Evidence</span>
+              </div>
+              <button
+                onClick={() => setActiveLightboxImg(null)}
+                className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex items-center justify-center bg-slate-900 rounded-2xl overflow-hidden max-h-[70vh]">
+              <img
+                src={activeLightboxImg}
+                alt="Evidence Full View"
+                className="max-h-[70vh] w-auto object-contain"
+              />
             </div>
           </div>
         </div>
