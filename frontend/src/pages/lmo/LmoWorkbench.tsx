@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { applicationApi, inspectionApi, certificateApi, analyticsApi } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { AppointmentScheduler } from '../../components/AppointmentScheduler';
 
 export const LmoWorkbench: React.FC = () => {
   const { t } = useTranslation();
@@ -395,16 +396,12 @@ export const LmoWorkbench: React.FC = () => {
             )}
 
             <form onSubmit={handleScheduleSubmit} className="space-y-4 text-xs font-medium">
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Confirmed Inspection Date & Time</label>
-                <input
-                  type="datetime-local"
-                  required
-                  value={scheduleDate}
-                  onChange={(e) => setScheduleDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm"
-                />
-              </div>
+              <AppointmentScheduler
+                value={scheduleDate}
+                onChange={(val) => setScheduleDate(val)}
+                label="Confirmed Statutory Inspection Window"
+                description="Official Legal Metrology inspection appointment communicated to the trader."
+              />
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Officer Notes & Working Standards Notice</label>
                 <textarea

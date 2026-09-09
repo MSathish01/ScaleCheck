@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { instrumentApi, applicationApi, analyticsApi, certificateApi } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { AppointmentScheduler } from '../../components/AppointmentScheduler';
 
 export const TraderDashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -1036,44 +1037,12 @@ export const TraderDashboard: React.FC = () => {
               </div>
 
               {/* Preferred Inspection Date & Time Picker */}
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">
-                  Preferred Inspection Date & Time Slot
-                </label>
-                <input
-                  type="datetime-local"
-                  value={applyPreferredDate}
-                  onChange={(e) => setApplyPreferredDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm"
-                />
-                {/* Quick Date Chips */}
-                <div className="flex gap-2 mt-1.5 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const tomorrow = new Date();
-                      tomorrow.setDate(tomorrow.getDate() + 1);
-                      const pad = (n: number) => (n < 10 ? '0' + n : n);
-                      setApplyPreferredDate(`${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}T10:30`);
-                    }}
-                    className="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition"
-                  >
-                    Tomorrow 10:30 AM
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const tomorrow = new Date();
-                      tomorrow.setDate(tomorrow.getDate() + 1);
-                      const pad = (n: number) => (n < 10 ? '0' + n : n);
-                      setApplyPreferredDate(`${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}T14:30`);
-                    }}
-                    className="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition"
-                  >
-                    Tomorrow 02:30 PM
-                  </button>
-                </div>
-              </div>
+              <AppointmentScheduler
+                value={applyPreferredDate}
+                onChange={(val) => setApplyPreferredDate(val)}
+                label="Preferred Inspection Date & Time Slot"
+                description="Select your preferred statutory inspection window for the Legal Metrology Officer."
+              />
 
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Premises Access Notes / Special Instructions</label>
