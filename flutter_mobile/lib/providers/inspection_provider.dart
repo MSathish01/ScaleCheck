@@ -50,6 +50,26 @@ class InspectionProvider with ChangeNotifier {
     }
   }
 
+  Future<void> loginOffline({String role = 'LMO'}) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _isOfflineMode = true;
+      _token = 'offline-demo-token';
+      _currentUser = {
+        'id': 'offline-user-1',
+        'fullName': role == 'LMO' ? 'Inspector S. Rajan (LMO)' : (role == 'GATC' ? 'Dr. M. Swaminathan (GATC)' : 'K. Ramanathan (Trader)'),
+        'role': role,
+        'email': role == 'LMO' ? 'lmo@scalecheck.gov.in' : (role == 'GATC' ? 'gatc@scalecheck.gov.in' : 'trader@scalecheck.gov.in'),
+        'district': 'Puducherry District',
+      };
+      await refreshLocalData();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> refreshLocalData() async {
     _jobs = await LocalDatabase.instance.getCachedJobs();
     _pendingQueue = await LocalDatabase.instance.getPendingInspections();

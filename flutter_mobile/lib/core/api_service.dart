@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../data/models/assigned_job.dart';
 import '../data/local_db.dart';
 
 class ApiService {
-  static const String defaultBaseUrl = 'http://10.0.2.2:5000/api/v1'; // 10.0.2.2 for Android Emulator
+  static const String defaultBaseUrl = kIsWeb
+      ? 'http://localhost:5000/api/v1'
+      : 'http://10.0.2.2:5000/api/v1'; // 10.0.2.2 for Android Emulator
   late final Dio _dio;
   String? _authToken;
   String? get authToken => _authToken;
@@ -34,6 +37,17 @@ class ApiService {
       return response.data['data'];
     }
     throw Exception(response.data['message'] ?? 'Login failed');
+  }
+
+  Future<Map<String, dynamic>> register(Map<String, dynamic> payload) async {
+    final response = await _dio.post('/auth/register', data: payload);
+    if (response.data['success'] == true) {
+      if (response.data['data']?['token'] != null) {
+        setToken(response.data['data']['token']);
+      }
+      return response.data['data'] ?? response.data;
+    }
+    throw Exception(response.data['message'] ?? 'Registration failed');
   }
 
   // --- Download Jobs to Local SQLite ---

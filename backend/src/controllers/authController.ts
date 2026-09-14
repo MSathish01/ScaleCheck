@@ -132,8 +132,15 @@ export class AuthController {
         return;
       }
 
+      // Support demo alias emails for convenience
+      let lookupEmail = email.toLowerCase().trim();
+      if (lookupEmail === 'lmo@scalecheck.gov.in') lookupEmail = 'lmo.puducherry@gov.in';
+      if (lookupEmail === 'gatc@scalecheck.gov.in') lookupEmail = 'gatc.south@testlab.org';
+      if (lookupEmail === 'trader@scalecheck.gov.in') lookupEmail = 'trader.mandi@chennai.com';
+      if (lookupEmail === 'admin@scalecheck.gov.in') lookupEmail = 'doca.admin@nic.in';
+
       const user = await prisma.user.findUnique({
-        where: { email },
+        where: { email: lookupEmail },
         include: { profile: true }
       });
 
