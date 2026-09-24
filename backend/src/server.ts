@@ -55,6 +55,15 @@ app.use((req: Request, res: Response) => {
   });
 });
 
+// Global Error handler
+app.use((err: any, req: Request, res: Response, next: any) => {
+  console.error('Server error:', err);
+  res.status(500).json({
+    success: false,
+    message: err?.message || 'Internal Server Error'
+  });
+});
+
 // Start server and initialize cryptographic services
 const startServer = async () => {
   try {
