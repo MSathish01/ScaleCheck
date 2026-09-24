@@ -20,7 +20,7 @@ app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 // Static directory for generated PDF certificates & upload attachments
-app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
+app.use('/uploads', express.static(config.uploadsPath));
 
 // Root route
 app.get('/', (req: Request, res: Response) => {
