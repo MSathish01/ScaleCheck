@@ -9,18 +9,25 @@ export class CryptoService {
   private static keyId: string = 'DOCA-LM-ROOT-KEY-2026';
 
   public static initializeKeys(): void {
-    if (!fs.existsSync(config.keysPath)) {
-      fs.mkdirSync(config.keysPath, { recursive: true });
+    try {
+      if (!fs.existsSync(config.keysPath)) {
+        fs.mkdirSync(config.keysPath, { recursive: true });
+      }
+
+      const privateKeyPath = path.join(config.keysPath, 'private_key.pem');
+      const publicKeyPath = path.join(config.keysPath, 'public_key.pem');
+
+      if (fs.existsSync(privateKeyPath) && fs.existsSync(publicKeyPath)) {
+        this.privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+        this.publicKey = fs.readFileSync(publicKeyPath, 'utf8');
+        console.log('🔑 [CryptoService] Loaded existing asymmetric keypair (KeyId:', this.keyId, ')');
+        return;
+      }
+    } catch (err) {
+      console.warn('⚠️ [CryptoService] Filesystem storage warning, using in-memory keys');
     }
 
-    const privateKeyPath = path.join(config.keysPath, 'private_key.pem');
-    const publicKeyPath = path.join(config.keysPath, 'public_key.pem');
-
-    if (fs.existsSync(privateKeyPath) && fs.existsSync(publicKeyPath)) {
-      this.privateKey = fs.readFileSync(privateKeyPath, 'utf8');
-      this.publicKey = fs.readFileSync(publicKeyPath, 'utf8');
-      console.log('🔑 [CryptoService] Loaded existing asymmetric keypair (KeyId:', this.keyId, ')');
-    } else {
+    if (!this.privateKey || !this.publicKey) {
       console.log('🔑 [CryptoService] Generating fresh RSA-2048 signing keypair for DoCA...');
       const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
         modulusLength: 2048,
@@ -34,11 +41,18 @@ export class CryptoService {
         }
       });
 
-      fs.writeFileSync(privateKeyPath, privateKey);
-      fs.writeFileSync(publicKeyPath, publicKey);
       this.privateKey = privateKey;
       this.publicKey = publicKey;
-      console.log('🔑 [CryptoService] Asymmetric keys generated and securely persisted.');
+
+      try {
+        const privateKeyPath = path.join(config.keysPath, 'private_key.pem');
+        const publicKeyPath = path.join(config.keysPath, 'public_key.pem');
+        fs.writeFileSync(privateKeyPath, privateKey);
+        fs.writeFileSync(publicKeyPath, publicKey);
+      } catch (err) {
+        // Safe to ignore in read-only serverless environment
+      }
+      console.log('🔑 [CryptoService] Asymmetric keys generated.');
     }
   }
 

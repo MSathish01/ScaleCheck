@@ -22,6 +22,17 @@ app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 // Static directory for generated PDF certificates & upload attachments
 app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
 
+// Root route
+app.get('/', (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ONLINE',
+    service: 'ScaleCheck Legal Metrology Backend API',
+    department: 'Department of Consumer Affairs (DoCA)',
+    health: '/health',
+    endpoints: '/api/v1'
+  });
+});
+
 // Health check
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({
@@ -50,18 +61,19 @@ const startServer = async () => {
     // 1. Initialize asymmetric RSA-2048 signing keypair
     CryptoService.initializeKeys();
 
-    // 2. Anchor genesis block if ledger is fresh
-    await LedgerService.ensureGenesisBlock();
+    // 2. Anchor genesis block if ledger is fresh (safely in background)
+    LedgerService.ensureGenesisBlock().catch(err => {
+      console.warn('⚠️ [LedgerService] Genesis block deferred check:', err.message);
+    });
 
-    // 3. Start periodic background validity check (runs every 6 hours in production; once at startup)
-    setTimeout(() => {
-      NotificationService.runAutomatedExpiryCheck().catch(err => {
-        console.warn('Initial expiry check warning:', err.message);
-      });
-    }, 5000);
-
-    // 4. Start HTTP listener (in standalone server mode, not in Vercel serverless)
+    // 3. Start periodic background validity check (runs only in non-serverless mode)
     if (!process.env.VERCEL) {
+      setTimeout(() => {
+        NotificationService.runAutomatedExpiryCheck().catch(err => {
+          console.warn('Initial expiry check warning:', err.message);
+        });
+      }, 5000);
+
       app.listen(config.port, () => {
         console.log('\n================================================================');
         console.log('🏛️  ScaleCheck — Legal Metrology e-Governance Platform');
