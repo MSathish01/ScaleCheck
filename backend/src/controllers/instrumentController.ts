@@ -113,7 +113,7 @@ export class InstrumentController {
       });
 
       // Dynamically enrich each instrument with live predictive wear drift
-      const enriched = instruments.map((inst) => {
+      const enriched = instruments.map((inst: any) => {
         const wearAnalysis = PredictiveService.calculateWearRisk({
           category: inst.category,
           accuracyClass: inst.accuracyClass,

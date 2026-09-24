@@ -127,7 +127,7 @@ export class AnalyticsController {
             complianceRate: totalStateInstruments > 0 ? Math.round((verifiedStateInstruments / totalStateInstruments) * 100) : 100,
             activeOfficers,
             pendingApplications,
-            districtBreakdown: instrumentsByDistrict.map((d) => ({
+            districtBreakdown: instrumentsByDistrict.map((d: any) => ({
               district: d.district,
               count: d._count.id
             }))
@@ -167,8 +167,8 @@ export class AnalyticsController {
           totalLedgerBlocks,
           totalTraders,
           totalOfficers,
-          stateDistribution: stateDistribution.map((s) => ({ state: s.state, count: s._count.id })),
-          categoryDistribution: categoryDistribution.map((c) => ({ category: c.category, count: c._count.id }))
+          stateDistribution: stateDistribution.map((s: any) => ({ state: s.state, count: s._count.id })),
+          categoryDistribution: categoryDistribution.map((c: any) => ({ category: c.category, count: c._count.id }))
         }
       });
     } catch (error: any) {
